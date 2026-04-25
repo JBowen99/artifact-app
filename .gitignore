@@ -1,2 +1,12 @@
 .env
 server/keys/
+server/bin/
+server/storage/
+client/build/
+client/node_modules/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out

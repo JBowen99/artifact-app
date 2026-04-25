@@ -74,7 +74,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, ownerID, name, descr
 		`INSERT INTO projects (name, description, repo_path, owner_id, team_id)
 		 VALUES ($1, $2, $3, $4, $5)
 		 RETURNING id, name, description, repo_path, owner_id, team_id, created_at, updated_at`,
-		name, description, repoPath, projectID, teamUUID,
+		name, description, repoPath, ownerID, teamUUID,
 	).Scan(&project.ID, &project.Name, &project.Description, &project.RepoPath,
 		&project.OwnerID, &project.TeamID, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
