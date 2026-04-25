@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -152,6 +153,13 @@ func envOr(key, fallback string) string {
 func parseDuration(s string) (time.Duration, error) {
 	if d, err := time.ParseDuration(s); err == nil {
 		return d, nil
+	}
+	if strings.HasSuffix(s, "d") {
+		days, err := strconv.ParseFloat(strings.TrimSuffix(s, "d"), 64)
+		if err != nil {
+			return 0, fmt.Errorf("cannot parse %q as duration", s)
+		}
+		return time.Duration(days * 24 * float64(time.Hour)), nil
 	}
 	hours, err := strconv.ParseFloat(s, 64)
 	if err != nil {
