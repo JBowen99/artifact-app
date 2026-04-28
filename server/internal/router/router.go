@@ -104,6 +104,7 @@ func (r *Router) Register() {
 	projects.Get("/:projectId/branches/:branchId", projectHandler.GetBranch)
 	projects.Delete("/:projectId/branches/:branchId", projectHandler.DeleteBranch)
 	projects.Get("/:projectId/files", fileHandler.BrowseFiles)
+	projects.Post("/:projectId/folders", fileHandler.CreateFolder)
 	projects.Get("/:projectId/locks", lockHandler.ListLocks)
 	projects.Post("/:projectId/workspaces", workspaceHandler.CreateWorkspace)
 	projects.Get("/:projectId/workspaces", workspaceHandler.ListWorkspaces)
@@ -263,6 +264,7 @@ func (r *Router) submit(c *fiber.Ctx) error {
 			Path:            f.Path,
 			Action:          f.Action,
 			UploadSessionID: f.UploadSessionID,
+			Message:         f.Message,
 		})
 	}
 

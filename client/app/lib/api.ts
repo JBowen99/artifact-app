@@ -26,7 +26,25 @@ import {
   TeamResponseSchema,
   TeamMemberResponseSchema,
   SearchResponseSchema,
+  InitUploadResponseSchema,
+  CompleteUploadResponseSchema,
 } from "./api-types";
+
+export interface SubmitFileInput {
+  file_id: string;
+  path: string;
+  action: string;
+  upload_session_id?: string;
+  message?: string;
+}
+
+export interface SubmitRequest {
+  workspace_id?: string;
+  branch: string;
+  message: string;
+  files: SubmitFileInput[];
+  release_locks: boolean;
+}
 
 class ApiError extends Error {
   status: number;
@@ -179,6 +197,54 @@ export const api = {
       const serverUrl = getServerUrl();
       return `${serverUrl}/api/v1/files/${fileId}/download`;
     },
+    async initUpload(projectId: string, branch: string, path: string, fileName: string, fileSize: number, contentHash: string) {
+      return request("/api/v1/files/upload", {
+        method: "POST",
+        body: JSON.stringify({
+          project_id: projectId,
+          branch,
+          path,
+          file_name: fileName,
+          file_size: fileSize,
+          content_hash: contentHash,
+        }),
+      }, InitUploadResponseSchema);
+    },
+    async uploadChunk(sessionId: string, chunkIndex: number, data: Blob): Promise<void> {
+      const serverUrl = getServerUrl();
+      const token = getAccessToken();
+      const formData = new FormData();
+      formData.append("chunk_index", String(chunkIndex));
+      formData.append("data", data);
+
+      const res = await fetch(`${serverUrl}/api/v1/files/upload/${sessionId}`, {
+        method: "PUT",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        let message = "Chunk upload failed";
+        try {
+          const body = await res.json();
+          message = body?.error?.message ?? message;
+        } catch {}
+        throw new ApiError(message, res.status);
+      }
+    },
+    async completeUpload(sessionId: string) {
+      return request(
+        `/api/v1/files/upload/${sessionId}/complete`,
+        { method: "POST" },
+        CompleteUploadResponseSchema,
+      );
+    },
+    async createFolder(projectId: string, branch: string, path: string) {
+      return request(`/api/v1/projects/${projectId}/folders`, {
+        method: "POST",
+        body: JSON.stringify({ project_id: projectId, branch, path }),
+      });
+    },
   },
 
   locks: {
@@ -244,6 +310,16 @@ export const api = {
     },
     async get(commitId: string) {
       return request(`/api/v1/commits/${commitId}`, {}, CommitResponseSchema);
+    },
+    async submit(projectId: string, data: SubmitRequest) {
+      return request(
+        `/api/v1/projects/${projectId}/submit`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
+        SubmitResponseSchema,
+      );
     },
   },
 

@@ -159,10 +159,23 @@ func (g *GitService) GetBranchHash(projectID, branchName string) (string, error)
 func (g *GitService) openRepo(projectID string) (*git.Repository, error) {
 	repoPath := filepath.Join(g.repoBasePath, projectID)
 	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return nil, fmt.Errorf("open repo at %s: %w", repoPath, err)
+	if err == nil {
+		return repo, nil
 	}
-	return repo, nil
+
+	if err == git.ErrRepositoryNotExists {
+		_, initErr := g.InitBareRepo(projectID)
+		if initErr != nil {
+			return nil, fmt.Errorf("auto-init repo at %s: %w", repoPath, initErr)
+		}
+		repo, openErr := git.PlainOpen(repoPath)
+		if openErr != nil {
+			return nil, fmt.Errorf("open repo at %s after init: %w", repoPath, openErr)
+		}
+		return repo, nil
+	}
+
+	return nil, fmt.Errorf("open repo at %s: %w", repoPath, err)
 }
 
 func (g *GitService) createEmptyTree(repo *git.Repository) (plumbing.Hash, error) {

@@ -25,6 +25,7 @@ type CommitFile struct {
 	Action   string
 	Path     string
 	FileName string
+	Message  string
 }
 
 type CommitWithAuthor struct {
@@ -64,6 +65,7 @@ type SubmitFileInput struct {
 	Path            string
 	Action          string
 	UploadSessionID string
+	Message         string
 }
 
 func (s *CommitService) Submit(ctx context.Context, projectID, userID string, workspaceID *string, branchName, message string, files []SubmitFileInput, releaseLocks bool) (*Commit, error) {
@@ -168,9 +170,9 @@ func (s *CommitService) Submit(ctx context.Context, projectID, userID string, wo
 			action = "modify"
 		}
 		_, err := tx.Exec(ctx,
-			`INSERT INTO commit_files (commit_id, file_id, action)
-			 VALUES ($1, $2, $3)`,
-			commit.ID, f.FileID, action,
+			`INSERT INTO commit_files (commit_id, file_id, action, message)
+			 VALUES ($1, $2, $3, $4)`,
+			commit.ID, f.FileID, action, f.Message,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("insert commit file: %w", err)
@@ -296,7 +298,7 @@ func (s *CommitService) GetCommit(ctx context.Context, commitID string) (*Commit
 	}
 
 	rows, err := s.pool.Query(ctx,
-		`SELECT cf.commit_id, cf.file_id, cf.action, f.path, f.file_name
+		`SELECT cf.commit_id, cf.file_id, cf.action, f.path, f.file_name, cf.message
 		 FROM commit_files cf
 		 JOIN files f ON cf.file_id = f.id
 		 WHERE cf.commit_id = $1`,
@@ -310,7 +312,7 @@ func (s *CommitService) GetCommit(ctx context.Context, commitID string) (*Commit
 	var files []CommitFile
 	for rows.Next() {
 		var cf CommitFile
-		if err := rows.Scan(&cf.CommitID, &cf.FileID, &cf.Action, &cf.Path, &cf.FileName); err != nil {
+		if err := rows.Scan(&cf.CommitID, &cf.FileID, &cf.Action, &cf.Path, &cf.FileName, &cf.Message); err != nil {
 			return &c, nil, err
 		}
 		files = append(files, cf)

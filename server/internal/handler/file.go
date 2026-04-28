@@ -232,6 +232,46 @@ func (h *FileHandler) DeleteFile(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (h *FileHandler) CreateFolder(c *fiber.Ctx) error {
+	var req model.CreateFolderRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Error: model.ErrorDetail{Code: "INVALID_REQUEST", Message: "Invalid JSON body"},
+		})
+	}
+
+	if req.ProjectID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Error: model.ErrorDetail{Code: "VALIDATION_ERROR", Message: "project_id is required"},
+		})
+	}
+	if req.Branch == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Error: model.ErrorDetail{Code: "VALIDATION_ERROR", Message: "branch is required"},
+		})
+	}
+	if req.Path == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Error: model.ErrorDetail{Code: "VALIDATION_ERROR", Message: "path is required"},
+		})
+	}
+
+	userID := middleware.GetUserID(c)
+
+	file, err := h.fileService.CreateFolder(c.Context(), userID, req.ProjectID, req.Branch, req.Path)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Error: model.ErrorDetail{Code: "CREATE_FOLDER_FAILED", Message: err.Error()},
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(model.CreateFolderResponse{
+		ID:        file.ID.String(),
+		Path:      file.Path,
+		CreatedAt: file.CreatedAt,
+	})
+}
+
 func fileToResponse(f *service.File) model.FileMetadata {
 	var ownerID string
 	if f.OwnerID != nil {

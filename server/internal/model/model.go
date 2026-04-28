@@ -144,6 +144,18 @@ type InitUploadRequest struct {
 	ContentHash string `json:"content_hash"`
 }
 
+type CreateFolderRequest struct {
+	ProjectID string `json:"project_id"`
+	Branch    string `json:"branch"`
+	Path      string `json:"path"`
+}
+
+type CreateFolderResponse struct {
+	ID        string    `json:"id"`
+	Path      string    `json:"path"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type InitUploadResponse struct {
 	SessionID   string `json:"session_id"`
 	ChunkSize   int64  `json:"chunk_size"`
@@ -235,6 +247,7 @@ type SubmitFile struct {
 	Path            string `json:"path"`
 	Action          string `json:"action"`
 	UploadSessionID string `json:"upload_session_id,omitempty"`
+	Message         string `json:"message,omitempty"`
 }
 
 type SubmitResponse struct {

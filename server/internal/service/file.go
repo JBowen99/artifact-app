@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -340,4 +341,45 @@ func (s *FileService) DeleteFile(ctx context.Context, fileID string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *FileService) CreateFolder(ctx context.Context, userID, projectID, branchName, folderPath string) (*File, error) {
+	if folderPath == "" || folderPath == "/" {
+		return nil, fmt.Errorf("folder path is required")
+	}
+
+	_, err := s.projectService.GetProject(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found: %w", err)
+	}
+
+	branch, err := s.projectService.GetBranchByName(ctx, projectID, branchName)
+	if err != nil {
+		return nil, fmt.Errorf("branch not found: %w", err)
+	}
+
+	_ = strings.Split(strings.Trim(folderPath, "/"), "/")
+	placeholderName := ".artifact-folder"
+
+	ownerUUID, _ := uuid.Parse(userID)
+
+	filePath := strings.TrimRight(folderPath, "/")
+	if !strings.HasPrefix(filePath, "/") {
+		filePath = "/" + filePath
+	}
+
+	var file File
+	err = s.pool.QueryRow(ctx,
+		`INSERT INTO files (project_id, branch_id, path, file_name, file_type, is_binary, content_hash, size_bytes, pointer_file_path, version, owner_id)
+		 VALUES ($1, $2, $3, $4, '', false, '', 0, '', 1, $5)
+		 RETURNING id, project_id, branch_id, path, file_name, file_type, is_binary, content_hash, size_bytes, pointer_file_path, version, owner_id, created_at, updated_at`,
+		projectID, branch.ID, filePath, placeholderName, ownerUUID,
+	).Scan(&file.ID, &file.ProjectID, &file.BranchID, &file.Path, &file.FileName, &file.FileType,
+		&file.IsBinary, &file.ContentHash, &file.SizeBytes, &file.PointerFilePath, &file.Version,
+		&file.OwnerID, &file.CreatedAt, &file.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("create folder: %w", err)
+	}
+
+	return &file, nil
 }

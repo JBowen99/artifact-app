@@ -2,6 +2,11 @@ const ACCESS_TOKEN_KEY = "artifact_access_token";
 const REFRESH_TOKEN_KEY = "artifact_refresh_token";
 const EMAIL_KEY = "artifact_user_email";
 
+function getStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage; } catch { return null; }
+}
+
 export interface TokenPair {
   access_token: string;
   refresh_token: string;
@@ -11,21 +16,21 @@ export interface TokenPair {
 export interface LoginResponse extends TokenPair {}
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return getStorage()?.getItem(ACCESS_TOKEN_KEY) ?? null;
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  return getStorage()?.getItem(REFRESH_TOKEN_KEY) ?? null;
 }
 
 export function setTokens(tokens: TokenPair): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  getStorage()?.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+  getStorage()?.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  getStorage()?.removeItem(ACCESS_TOKEN_KEY);
+  getStorage()?.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function hasTokens(): boolean {
@@ -33,13 +38,13 @@ export function hasTokens(): boolean {
 }
 
 export function getEmail(): string | null {
-  return localStorage.getItem(EMAIL_KEY);
+  return getStorage()?.getItem(EMAIL_KEY) ?? null;
 }
 
 export function setEmail(email: string): void {
-  localStorage.setItem(EMAIL_KEY, email);
+  getStorage()?.setItem(EMAIL_KEY, email);
 }
 
 export function clearEmail(): void {
-  localStorage.removeItem(EMAIL_KEY);
+  getStorage()?.removeItem(EMAIL_KEY);
 }

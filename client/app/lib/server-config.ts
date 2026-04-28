@@ -1,16 +1,21 @@
 const STORAGE_KEY = "artifact_server_url";
 
+function getStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage; } catch { return null; }
+}
+
 export function getServerUrl(): string | null {
-  return localStorage.getItem(STORAGE_KEY);
+  return getStorage()?.getItem(STORAGE_KEY) ?? null;
 }
 
 export function setServerUrl(url: string): void {
   const normalized = url.replace(/\/+$/, "");
-  localStorage.setItem(STORAGE_KEY, normalized);
+  getStorage()?.setItem(STORAGE_KEY, normalized);
 }
 
 export function clearServerUrl(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  getStorage()?.removeItem(STORAGE_KEY);
 }
 
 export async function testConnection(url: string): Promise<boolean> {

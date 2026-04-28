@@ -5,18 +5,23 @@ function getStorageKey(serverUrl: string): string {
   return `artifact_mirror_${hash}`;
 }
 
+function getStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage; } catch { return null; }
+}
+
 export function getMirrorPath(serverUrl?: string): string | null {
   const url = serverUrl ?? getServerUrl();
   if (!url) return null;
-  return localStorage.getItem(getStorageKey(url));
+  return getStorage()?.getItem(getStorageKey(url)) ?? null;
 }
 
 export function setMirrorPath(serverUrl: string, path: string): void {
-  localStorage.setItem(getStorageKey(serverUrl), path);
+  getStorage()?.setItem(getStorageKey(serverUrl), path);
 }
 
 export function clearMirrorPath(serverUrl: string): void {
-  localStorage.removeItem(getStorageKey(serverUrl));
+  getStorage()?.removeItem(getStorageKey(serverUrl));
 }
 
 export function getDefaultMirrorPath(): string {
